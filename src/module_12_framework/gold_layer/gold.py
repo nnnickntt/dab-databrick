@@ -31,15 +31,11 @@ final_result_df = transform(sales_transaction_df=fact_sales_df, shop_dimension_d
 
 # COMMAND ----------
 
-spark.sql(f"CREATE SCHEMA IF NOT EXISTS {target_catalog}.gold")
-
-final_result_df.write.saveAsTable(f"{target_catalog}.gold.transform_sales_transaction", mode="overwrite", mergeSchema=True)
-
-# COMMAND ----------
-
 try:
     target_catalog = dbutils.widgets.get("catalog")
 except KeyError:
     target_catalog = "dev"
-
+    
+spark.sql(f"CREATE CATALOG IF NOT EXISTS {target_catalog}")
+spark.sql(f"CREATE SCHEMA IF NOT EXISTS {target_catalog}.gold")
 final_result_df.write.saveAsTable(f"{target_catalog}.gold.transform_sales_transaction", mode="overwrite", mergeSchema=True)
