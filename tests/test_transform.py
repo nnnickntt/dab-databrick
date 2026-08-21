@@ -28,11 +28,8 @@ class TestTierDiscount(unittest.TestCase):
         except:
             cls.spark = spark
 
-    @classmethod
-    def tearDownClass(cls):
-        cls.spark.stop()
-
     def test_apply_function(self):
+        #Prepare data
         fact_sales_schema = StructType([
             StructField("transaction_id", IntegerType(), True),
             StructField("shop_id", IntegerType(), True),
@@ -62,6 +59,7 @@ class TestTierDiscount(unittest.TestCase):
         ]
         shop_df = self.spark.createDataFrame(shop_raw, shop_schema)
 
+        #Expexcted Result
         expected_schema = StructType([
             StructField("sales_date", DateType(), True),
             StructField("sum_sales", IntegerType(), True),
@@ -76,10 +74,34 @@ class TestTierDiscount(unittest.TestCase):
             (date(2025, 1, 1), 5452, 1817, 3, 5000.02)
         ]
 
+        #Compare Data
         expected_result = self.spark.createDataFrame(expected_data, expected_schema).sort(col("sales_date")).collect()
         actual_result = transform(sales_transaction_df=fact_sales_df, shop_dimension_df=shop_df).sort(col("sales_date")).collect()
 
         self.assertEqual(first=actual_result, second=expected_result)
+
+    def test_empty_input(self):
+        fact_sales_schema = StructType([
+            StructField("transaction_id", IntegerType(), True),
+            StructField("shop_id", IntegerType(), True),
+            StructField("sales_qty", IntegerType(), True),
+            StructField("sales_amt", FloatType(), True),
+            StructField("sales_date", DateType(), True)
+        ])
+        shop_schema = StructType([
+            StructField("shop_id", StringType(), True),
+            StructField("shop_name", StringType(), True),
+            StructField("branch_name", StringType(), True),
+            StructField("file_dt", StringType(), True)
+        ])
+        
+        empty_fact_sales_df = spark.createDataFrame([],fact_sales_schema)
+        empty_shop_sales_df = spark.createDataFrame([],shop_schema)
+
+        result = transform(sales_transaction_df=empty_fact_sales_df, shop_dimension_df=empty_shop_sales_df).isEmpty()
+
+        expected_resutl = True
+        self.assertEqual(result,True)
 
 if __name__ == "__main__":
     unittest.main()
